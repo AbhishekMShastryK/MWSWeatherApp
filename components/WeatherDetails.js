@@ -1,6 +1,5 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import {colors} from '../utils/index'
 import { Ionicons, Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 
 
@@ -25,21 +24,21 @@ export default function WeatherDetails({currentWeather, currentJson}) {
         <View style={styles.detailView}>
           <View style={styles.weatherDetails}>
           <View style={{flexDirection:'row',marginBottom:'15%'}}>
-            <Ionicons style={{alignSelf:'center',marginRight:'7%'}} name="water" size={28} color={colors.COLOR_CODE1} />
+            <Ionicons style={{alignSelf:'center',marginRight:'7%'}} name="water" size={28} color="#DC654B" />
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Humidity</Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(humidity*10)/10} %</Text>
             </View>
           </View>
           <View style={{flexDirection:'row',marginBottom:'15%'}}>
-            <FontAwesome5 style={{alignSelf:'center',marginRight:'7%'}} name="water" size={25} color={colors.COLOR_CODE1} />
+            <FontAwesome5 style={{alignSelf:'center',marginRight:'7%'}} name="water" size={25} color="#DC654B" />
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Soil Moisture</Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(soilMoisture*10)/10} %</Text>
             </View>
           </View>
           <View style={{flexDirection:'row'}}>
-            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunrise" size={28} color={colors.COLOR_CODE1} />
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunrise" size={28} color="#DC654B" />
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Sunrise</Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{sun_rise}</Text>
@@ -48,21 +47,21 @@ export default function WeatherDetails({currentWeather, currentJson}) {
           </View> 
           <View style={styles.weatherDetails}>
           <View style={{flexDirection:'row',marginBottom:'13%'}}>
-            <MaterialIcons  style={{alignSelf:'center',marginRight:'7%'}} name="speed" size={28} color={colors.COLOR_CODE1} /> 
+            <MaterialIcons  style={{alignSelf:'center',marginRight:'7%'}} name="speed" size={28} color="#DC654B" /> 
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Pressure             </Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(pressure*10)/10} hPa</Text>
             </View>
           </View>
           <View style={{flexDirection:'row',marginBottom:'13%'}}>
-            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sun" size={28} color={colors.COLOR_CODE1} />
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sun" size={28} color="#DC654B" />
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>UV Index</Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{uv}</Text>
             </View>
           </View> 
           <View style={{flexDirection:'row'}}>
-            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunset" size={28} color={colors.COLOR_CODE1} />
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunset" size={28} color="#DC654B" />
             <View>
             <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Sunset</Text>
             <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{sun_set}</Text>

@@ -1,9 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, Image } from 'react-native'
-import{colors} from '../utils/index'
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const {COLOR_CODE1,COLOR_CODE3} = colors
 export default function WeatherInfo({currentWeather,currentJson}) {
     const {weather: [details],name,clouds :{all}} = currentWeather
     const {icon, description} = details
@@ -27,7 +25,7 @@ export default function WeatherInfo({currentWeather,currentJson}) {
                 padding:7,
                 borderRadius:20,
                 marginTop:'4%'}}>
-                <MaterialCommunityIcons style = {{alignSelf:'center',marginLeft:'0.5%'}} name="leaf" size={20} color={colors.COLOR_CODE1} />
+                <MaterialCommunityIcons style = {{alignSelf:'center',marginLeft:'0.5%'}} name="leaf" size={20} color="#DC654B" />
                 <Text style={{color:'#cccccc',alignSelf:'center',marginLeft:'0.4%'}}>Air Quality Index   </Text>
                 <Text style={{color:'#eeeeee',fontSize:18,fontWeight:'bold',alignSelf:'center'}}>{Math.round(aqi*10)/10} </Text>
              </View>
@@ -42,7 +40,7 @@ const styles = StyleSheet.create({
     weatherDescription: {
         fontSize:20,
         textTransform: 'capitalize',
-        color: COLOR_CODE3,
+        color: "#707070",
         fontWeight: 'bold',
     },
     weatherIcon: {
@@ -51,19 +49,19 @@ const styles = StyleSheet.create({
     },
     textDes: {
         fontSize:55,
-        color: COLOR_CODE1,
+        color: "#DC654B",
         fontWeight:'bold'
     },
     textDes2: {
         // fontSize:15,
         fontWeight: '600',
-        color:COLOR_CODE1,
+        color:"#DC654B",
         alignSelf:'center'
     },
     textDes3: {
         fontSize:16,
         fontWeight: 'bold',
-        color:COLOR_CODE1,
+        color:"#DC654B",
         alignSelf:'center'
     },
     cityName: {

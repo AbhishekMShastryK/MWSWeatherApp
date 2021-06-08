@@ -3,7 +3,6 @@ import React, {useEffect,useState} from 'react';
 import { StyleSheet, Text, View, ActivityIndicator,RefreshControl, TouchableOpacity,Linking,Dimensions,ScrollView, Image } from 'react-native';
 import * as Location from 'expo-location';
 import WeatherInfo from './components/WeatherInfo';
-import {colors} from './utils/index';
 import ReloadIcon from'./components/ReloadIcon';
 import WeatherDetails from './components/WeatherDetails';
 import 'react-native-gesture-handler';
@@ -119,7 +118,7 @@ else if (errorMessage){
 else {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.COLOR_CODE1}/>
+      <ActivityIndicator size="large" color="#DC654B"/>
       <StatusBar style="light" />
     </View>
   );
@@ -207,7 +206,7 @@ function InfoIcon (){
       <TouchableOpacity title="Infoscreen"
         onPress={() => {Linking.openURL('https://mws-abhishas3.netlify.app/#')}} >
           <View style={styles.InfoIcon}>
-              <Octicons name="info" size={25} color={colors.COLOR_CODE1} />
+              <Octicons name="info" size={25} color="#DC654B" />
           </View>    
       </TouchableOpacity>
   );
