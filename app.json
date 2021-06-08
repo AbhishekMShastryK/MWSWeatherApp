@@ -17,7 +17,12 @@
     "android": {
       "package": "com.abhishas3.WeatherApp",
       "versionCode": 1,
-      "enableDangerousExperimentalLeanBuilds" : true
+      "enableDangerousExperimentalLeanBuilds" : true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBChYKHwVmg9BDqfdDCRQmQaJ0bE5Pe1zg"
+        }
+      }
     }
   }
 }

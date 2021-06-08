@@ -1,9 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import React, {useEffect,useState,useMemo} from 'react';
-import { StyleSheet, Text, View, ActivityIndicator,SafeAreaView, TouchableOpacity,Linking,Dimensions,ScrollView } from 'react-native';
+import React, {useEffect,useState} from 'react';
+import { StyleSheet, Text, View, ActivityIndicator,RefreshControl, TouchableOpacity,Linking,Dimensions,ScrollView, Image } from 'react-native';
 import * as Location from 'expo-location';
 import WeatherInfo from './components/WeatherInfo';
-import UnitsPicker from './components/UnitsPicker';
 import {colors} from './utils/index';
 import ReloadIcon from'./components/ReloadIcon';
 import WeatherDetails from './components/WeatherDetails';
@@ -11,27 +10,33 @@ import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator,CardStyleInterpolators } from '@react-navigation/stack';
 import { Octicons } from '@expo/vector-icons';
-import {LineChart} from 'react-native-chart-kit'
+import MapView from 'react-native-maps';
+import { WebView } from 'react-native-webview';
+import NodePicker from './components/NodePicker';
 
 const Stack = createStackNavigator();
 const WEATHER_API_KEY = '3d762beabfc99d3f5d8cafddac6724dd'
 const BASE_WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather?'
 
 
-
 function Home({navigation}) {
-
+ 
   const [errorMessage, setErrorMessage] = useState(null)
-
+  const [nodeValue, setNodeValue] = useState('1392796');
   const [currentWeather, setCurrentWeather] = useState(null)
-
-  const [unitSystem, setunitSystem] = useState('metric')
+  const [currentJson, setCurrentJson]  = useState(null)
+  
+  
+ const [unitSystem, setunitSystem] = useState('metric')
   useEffect(() =>{
     load()
-  },[unitSystem])
+  },[unitSystem,nodeValue])
   async function load(){
     setCurrentWeather(null)
     setErrorMessage(null)
+  
+    
+
     try{
       let { status } = await Location.requestPermissionsAsync()
 
@@ -39,11 +44,33 @@ function Home({navigation}) {
         setErrorMessage('Access to location is needed to run the app')
         return
     }
-      const location = await Location.getCurrentPositionAsync()
+    window.nodeval = nodeValue
+    const res = await fetch(`https://api.thingspeak.com/channels/${nodeValue}/feeds.json`)
+    const res1 = await fetch(`https://api.thingspeak.com/channels/1384648/feeds.json`)
+    const res2 = await fetch(`https://api.thingspeak.com/channels/1392064/feeds.json`)
+    const myJson = await res.json()
+    const myJson1 = await res1.json()
+    const myJson2 = await res2.json()
+      if (myJson) {
+        setCurrentJson(myJson)
+      }
 
-      const {latitude,longitude} = location.coords
+      // const location = await Location.getCurrentPositionAsync()
+      
+      const latitude1 = myJson1.channel.latitude
+      const longitude1 = myJson1.channel.longitude
+      window.lat1 = parseFloat(latitude1)
+      window.lng1 = parseFloat(longitude1)
+      const latitude2 = myJson2.channel.latitude
+      const longitude2 = myJson2.channel.longitude
+      window.lat2 = parseFloat(latitude2)
+      window.lng2 = parseFloat(longitude2)
+      window.channelDataLastEntryID = myJson.channel.last_entry_id
+      
+     
+      
+      const weatherUrl = `${BASE_WEATHER_URL}lat=${latitude1}&lon=${longitude1}&units=${unitSystem}&appid=${WEATHER_API_KEY}`
 
-      const weatherUrl = `${BASE_WEATHER_URL}lat=${latitude}&lon=${longitude}&units=${unitSystem}&appid=${WEATHER_API_KEY}`
 
       const response = await fetch(weatherUrl)
       
@@ -51,11 +78,6 @@ function Home({navigation}) {
       
       if(response.ok){
         setCurrentWeather(result)
-        const temp_g = result.main.temp
-        const hum_g = result.main.humidity
-        const pressure_g = result.main.pressure
-        // console.log(temp_g,hum_g,pressure_g)
-        window.li = [temp_g,hum_g,pressure_g]
       
       }
       
@@ -67,30 +89,22 @@ function Home({navigation}) {
       setErrorMessage(error.message)
     }
   }
-if(currentWeather){
-  return (
-    <SafeAreaView style={{flex:1}}>
-      <View style={styles.container}>
-        <View style = {{top:500,right:0}}>
-          <TouchableOpacity style={{alignItems: "center",
-          backgroundColor: '#d9d9d9',
-          padding: 5}}
-          onPress={() => {navigation.navigate('Details')}} >
-          <Text style={{fontWeight:'bold',fontSize:17,color:'black'}}>Go to Details {'>>'}</Text>
-          </TouchableOpacity>
-        </View>
+
   
-        <StatusBar style="light" />
-        <View style={styles.main}>
-          <UnitsPicker unitSystem={unitSystem} setunitSystem={setunitSystem}/>
-          <ReloadIcon load={load}/>
-          <WeatherInfo currentWeather={currentWeather} />
-        </View>  
-        <WeatherDetails currentWeather={currentWeather} unitSystem={unitSystem}/>
-      </View>
-      
-    </SafeAreaView>
-  );
+if(currentWeather){
+  return (<ScrollView contentContainerStyle={{backgroundColor:'#d9d9d9',flex:1}} refreshControl={<RefreshControl onRefresh={load} />} >
+    <StatusBar style="light" />
+    <NodePicker nodeValue={nodeValue} setNodeValue={setNodeValue}/>
+    <WeatherInfo currentWeather={currentWeather} currentJson={currentJson} />
+    <WeatherDetails currentWeather={currentWeather} currentJson={currentJson}/>
+    <TouchableOpacity style={{alignItems: "center",
+           backgroundColor: '#d9d9d9',
+           padding: 5,marginTop:'7%'}}
+           onPress={() => {navigation.navigate('Details')}} >
+           <Text style={{fontWeight:'bold',fontSize:17,color:'black'}}>Go to Details {'>>'}</Text>
+           </TouchableOpacity>
+
+  </ScrollView>);
 }
 else if (errorMessage){
   return (
@@ -114,115 +128,78 @@ else {
 }
 
 
+
 function DetailsScreen(){
-
-  //const ctime = new Date().toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")
-  const BASE_MAP_URL = `http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid=${WEATHER_API_KEY}`
+  const iframe1 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src='https://thingspeak.com/channels/${nodeval}/charts/1?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Temperature&type=line'></iframe>`;
+  const iframe2 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/2?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Humidity&type=line"></iframe>`;
+  const iframe3 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/3?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Pressure&type=line"></iframe>`;
+  const iframe4 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/4?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Soil+Moisture&type=line"></iframe>`;
+  const iframe5 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/5?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=UV+Index&type=line"></iframe>`;
+  const iframe6 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/6?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Air+Quality+Index&type=line"></iframe>`; 
   
-  const temp_d = {
-      labels: ['12am', '3am', '6am', '9am', '12pm', '3pm','6pm','9pm'],
-      datasets: [
-        {
-          data: [li[0]],
-          strokeWidth: 2, // optional
-        },
-      ],
-    };
-
-    const hum_d = {
-      labels: ['12am', '3am', '6am', '9am', '12pm', '3pm','6pm','9pm'],
-      datasets: [
-        {
-          data: [li[1]],
-          strokeWidth: 2, // optional
-        },
-      ],
-    };
-    
-    const pressure_d = {
-      labels: ['12am', '3am', '6am', '9am', '12pm', '3pm','6pm','9pm'],
-      datasets: [
-        {
-          data: [li[2]],
-          strokeWidth: 2, // optional
-        },
-      ],
-    };
-    
   return (
-    <ScrollView >
+    <ScrollView style={{backgroundColor:'#d9d9d9'}}>
         <View>
-          <Text>Still in developing stage...</Text>
-          <Text style={{textAlign:'center',fontSize:18,fontWeight:'bold',marginTop:20}}>
-            Temperature
-          </Text>
-          <LineChart
-            data={temp_d}
-            width={Dimensions.get('window').width} // from react-native
-            height={220}
-            // yAxisLabel={''}
-            chartConfig={{
-              backgroundGradientFrom: '#000000',
-              backgroundGradientTo: '#bbbbbb',
-              decimalPlaces: 1, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              
+          <TouchableOpacity style={{alignItems: "center",
+          backgroundColor: '#222222',
+          marginRight:'25%',
+          marginLeft:'25%',
+          marginTop:'5%',
+          padding: 8}}
+          onPress={() => {Linking.openURL('https://mwsdata.netlify.app/')}} >
+          <Text style={{fontWeight:'bold',fontSize:20,color:'#dddddd'}}>Download Data</Text>
+          </TouchableOpacity>
+          <Text style={styles.maptitle}>MWS Node Location</Text>
+          <MapView style={styles.map}
+          initialRegion={{
+            latitude: lat1,
+            longitude: lng1,
+            latitudeDelta: 0.2,
+            longitudeDelta: 0.2,
+          }}
+          zoomEnabled={true}
+          scrollEnabled={true}
+          showsScale={true} >
+          <MapView.Marker 
+            coordinate={{
+              latitude: lat1,
+              longitude: lng1,
             }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
+            title={"Node 1"}
+            description={`latitude: ${lat1}    longitude: ${lng1}`}/>
+            <MapView.Marker 
+            coordinate={{
+              latitude: lat2,
+              longitude: lng2,
             }}
-          />
+            title={"Node 2"}
+            description={`latitude: ${lat2}    longitude: ${lng2}`}/>
+          </MapView>
         </View>
-        <View>
-          <Text style={{textAlign:'center',fontSize:18,fontWeight:'bold',marginTop:20}}>
-            Humidity
-          </Text>
-          <LineChart
-            data={hum_d}
-            width={Dimensions.get('window').width} // from react-native
-            height={220}
-            // yAxisLabel={''}
-            chartConfig={{
-              backgroundGradientFrom: '#000000',
-              backgroundGradientTo: '#bbbbbb',
-              decimalPlaces: 1, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
-          />
-        </View>
-        <View>
-          <Text style={{textAlign:'center',fontSize:18,fontWeight:'bold',marginTop:20}}>
-            Pressure
-          </Text>
-          <LineChart
-            data={pressure_d}
-            width={Dimensions.get('window').width} // from react-native
-            height={220}
-            // yAxisLabel={''}
-            chartConfig={{
-              backgroundGradientFrom: '#000000',
-              backgroundGradientTo: '#bbbbbb',
-              decimalPlaces: 1, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16
-            }}
-          />
-        </View>
+        <Text style={styles.graphtitle}>Weather Plot</Text>
+        <WebView
+          scalesPageToFit={false}
+          bounces={false}
+          javaScriptEnabled
+          style={{ height: 1470, width: Dimensions.get('window').width, backgroundColor:'#DC654B', }}
+          source={{
+            html: `
+                  <!DOCTYPE html>
+                  <html>
+                    <head></head> 
+                    <body>
+                      <div id="baseDiv">${iframe1} ${iframe2} ${iframe3} ${iframe4} ${iframe5} ${iframe6}</div>
+                    </body>
+                  </html>
+            `,
+          }}
+          automaticallyAdjustContentInsets={false}
+        />
+        
         
     </ScrollView>
     
   );
-  
 }
 
 function InfoIcon (){
@@ -236,9 +213,28 @@ function InfoIcon (){
   );
   
 }
-
+// const ActionBarImage = () => {
+//   return (
+//     <View style={{flexDirection: 'row'}}>
+//       <Image
+//         source={{
+//           uri:
+//             'https://i.ibb.co/VTvLGnT/wappicon1.jpg',
+//         }}
+//         style={{
+//           width: 40,
+//           height: 40,
+//           marginLeft: 15,
+//         }}
+//       />
+//     </View>
+//   );
+// };
 export default function App (){
+ 
+
   return (
+
     <NavigationContainer>
       <Stack.Navigator >
         <Stack.Screen name="Home" component={Home} options={{
@@ -250,7 +246,8 @@ export default function App (){
           headerTintColor: '#d9d9d9',
           headerTitleStyle: {
             fontWeight: 'bold',
-          } , headerRight: () => <InfoIcon/>,
+          } , headerRight: () => <InfoIcon />,
+          // headerLeft: () => <ActionBarImage />,
           headerTitleAlign:'center'
         }}/>
         <Stack.Screen name="Details" component={DetailsScreen} options={{
@@ -281,4 +278,32 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 20,
 },
+map: {
+  width: Dimensions.get('window').width,
+  height: Dimensions.get('window').height*(60/100),
+  alignSelf:'center',
+  
+},
+maptitle: {
+  padding:10,
+  backgroundColor:'#DC654B',
+  color:'#222222',
+  alignSelf: 'center',
+  marginTop:'10%',
+  width:'85%',
+  textAlign:'center',
+  fontSize:20,
+  fontWeight:'bold',
+},
+graphtitle: {
+  padding:10,
+  backgroundColor:'#222222',
+  color:'#dddddd',
+  alignSelf: 'center',
+  marginTop:'11%',
+  width:'85%',
+  textAlign:'center',
+  fontSize:20,
+  fontWeight:'bold',
+}
 });

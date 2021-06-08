@@ -1,97 +1,96 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import {colors} from '../utils/index'
-import { FontAwesome, Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons, Feather, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 
 
-export default function WeatherDetails({currentWeather, unitSystem}) {
+export default function WeatherDetails({currentWeather, currentJson}) {
     const {
-        main: {feels_like, humidity, pressure},
+        // main: {feels_like, humidity, pressure},
         wind: {speed},
         sys: {sunrise,sunset}
     } = currentWeather
-
+    const feedSize = currentJson.feeds.length
+    const soilMoisture = currentJson.feeds[feedSize-1].field4
+    const humidity = currentJson.feeds[feedSize-1].field2
+    const pressure = currentJson.feeds[feedSize-1].field3
+    const uv_index = currentJson.feeds[feedSize-1].field5
+    
     const sun_rise = new Date(sunrise * 1000).toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")
     const sun_set = new Date(sunset * 1000).toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")
 
-    const windSpeed = unitSystem === 'metric' ? `${Math.round(speed*10)/10} m/s` : `${Math.round(speed*10)/10} miles/h`
+    const uv = uv_index <= 2  ? `${uv_index},Low` : uv_index > 2 && uv_index <= 5 ? `${uv_index},Moderate` : uv_index > 5 && uv_index <= 7 ? `${uv_index},High` :  uv_index > 7 && uv_index <= 10 ? `${uv_index},VeryHigh` : `${uv_index},Extreme`
     
     return (
-        
-        <View style={styles.weatherDetails}>
-            <View style={styles.weatherDetailRow}>
-                <View style={styles.weatherDetailBox}>
-                    <View style={styles.weatherDetailRow}>
-                        <FontAwesome name="thermometer" size={26} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>   Feels like</Text>
-                            <Text style={styles.textDetails}>   {feels_like}°</Text> 
-                        </View>  
-                    </View>
-                </View>
-                <View style={styles.weatherDetailBox}>
-                <View style={styles.weatherDetailRow}>
-                        <Ionicons name="water" size={28} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>Humidity</Text>
-                            <Text style={styles.textDetails}>{humidity} %</Text> 
-                        </View>  
-                    </View>
-                </View>
+        <View style={styles.detailView}>
+          <View style={styles.weatherDetails}>
+          <View style={{flexDirection:'row',marginBottom:'15%'}}>
+            <Ionicons style={{alignSelf:'center',marginRight:'7%'}} name="water" size={28} color={colors.COLOR_CODE1} />
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Humidity</Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(humidity*10)/10} %</Text>
             </View>
-            <View style={{...styles.weatherDetailRow, borderTopWidth:1, borderTopColor:'#d9d9d9'}}>
-                <View style={styles.weatherDetailBox}>
-                    <View style={styles.weatherDetailRow}>
-                        <Feather name="wind" size={25} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>Wind speed</Text>
-                            <Text style={styles.textDetails}>{windSpeed}</Text> 
-                        </View>  
-                    </View>
-                </View>
-                <View style={styles.weatherDetailBox}>
-                    <View style={styles.weatherDetailRow}>
-                        <Ionicons name="speedometer" size={24} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>Pressure</Text>
-                            <Text style={styles.textDetails}>{pressure} hPa</Text> 
-                        </View>  
-                    </View>
-                </View>
-            </View> 
-            <View style={{...styles.weatherDetailRow, borderTopWidth:1, borderTopColor:'#d9d9d9'}}>
-                <View style={styles.weatherDetailBox}>
-                    <View style={styles.weatherDetailRow}>
-                        <Feather name="sunrise" size={25} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>Sunrise</Text>
-                            <Text style={styles.textDetails}>{sun_rise}</Text> 
-                        </View>  
-                    </View>
-                </View>
-                <View style={styles.weatherDetailBox}>
-                    <View style={styles.weatherDetailRow}>
-                        <Feather name="sunset" size={25} color={colors.COLOR_CODE1} />
-                        <View style={styles.weatherDetailItems}>
-                            <Text style={styles.textDetails}>  Sunset  </Text>
-                            <Text style={styles.textDetails}>{sun_set}</Text> 
-                        </View>  
-                    </View>
-                </View>
+          </View>
+          <View style={{flexDirection:'row',marginBottom:'15%'}}>
+            <FontAwesome5 style={{alignSelf:'center',marginRight:'7%'}} name="water" size={25} color={colors.COLOR_CODE1} />
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Soil Moisture</Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(soilMoisture*10)/10} %</Text>
             </View>
+          </View>
+          <View style={{flexDirection:'row'}}>
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunrise" size={28} color={colors.COLOR_CODE1} />
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Sunrise</Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{sun_rise}</Text>
+            </View>
+          </View>
+          </View> 
+          <View style={styles.weatherDetails}>
+          <View style={{flexDirection:'row',marginBottom:'13%'}}>
+            <MaterialIcons  style={{alignSelf:'center',marginRight:'7%'}} name="speed" size={28} color={colors.COLOR_CODE1} /> 
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Pressure             </Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{Math.round(pressure*10)/10} hPa</Text>
+            </View>
+          </View>
+          <View style={{flexDirection:'row',marginBottom:'13%'}}>
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sun" size={28} color={colors.COLOR_CODE1} />
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>UV Index</Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{uv}</Text>
+            </View>
+          </View> 
+          <View style={{flexDirection:'row'}}>
+            <Feather style={{alignSelf:'center',marginRight:'7%'}} name="sunset" size={28} color={colors.COLOR_CODE1} />
+            <View>
+            <Text style={{color:'#cccccc',alignSelf:'flex-start',fontSize:14}}>Sunset</Text>
+            <Text style={{color:'#eeeeee',alignSelf:'flex-start',fontSize:20,fontWeight:'bold'}}>{sun_set}</Text>
+            </View>
+          </View>   
+          </View>  
         </View>
-    )
+        
+    );
 }
 
 const styles = StyleSheet.create ({
-    weatherDetails: {
-        top:120,
-        margin:-70,
-        borderWidth:1,
-        borderRadius: 10,
-        top:0,
+    weatherDetails: {  
+        // borderWidth:1,
+        padding:12,
         backgroundColor:'#222222',
-        shadowColor: "#000000",
+    },
+    
+    detailView: {
+    flexDirection:'row',
+    marginLeft:'5%',
+    marginRight:'5%',
+    backgroundColor:'#222222',
+    alignSelf:'center',
+    padding:4,
+    borderRadius:10,
+    marginTop:'9%',
+    shadowColor: "#000000",
         shadowOffset: {
             width: 0,
             height: 4,
@@ -100,26 +99,5 @@ const styles = StyleSheet.create ({
         shadowRadius: 4.65,
 
         elevation: 8,
-    },
-    weatherDetailRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-
-    },
-    weatherDetailBox: {
-        padding:20,
-        
-    },
-    weatherDetailItems: {
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
-        marginLeft:20
-    },
-    textDetails: {
-        fontSize: 15,
-        color: '#d9d9d9',
-        fontWeight: '700',
-        alignSelf: 'center' 
     },
 })
