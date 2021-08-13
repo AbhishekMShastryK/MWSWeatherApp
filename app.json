@@ -2,7 +2,7 @@
   "expo": {
     "name": "WeatherApp",
     "slug": "Weather_App",
-    "version": "1.1.2",
+    "version": "2.4.0",
     "orientation": "portrait",
     "icon": "./assets/wappicon.png",
     "updates": {
@@ -12,17 +12,18 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abhishas3.WeatherApp",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "package": "com.abhishas3.WeatherApp",
-      "versionCode": 1,
-      "enableDangerousExperimentalLeanBuilds" : true,
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyBChYKHwVmg9BDqfdDCRQmQaJ0bE5Pe1zg"
-        }
-      }
+      "versionCode": 5,
+      "enableDangerousExperimentalLeanBuilds" : true
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#222222"
     }
   }
 }

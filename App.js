@@ -1,30 +1,31 @@
 import { StatusBar } from 'expo-status-bar';
 import React, {useEffect,useState} from 'react';
-import { StyleSheet, Text, View, ActivityIndicator,RefreshControl, TouchableOpacity,Linking,Dimensions,ScrollView, Image } from 'react-native';
-import * as Location from 'expo-location';
+import { StyleSheet, Text, View, ActivityIndicator,RefreshControl, TouchableOpacity,Linking,Dimensions,ScrollView, SafeAreaView, TextInput, } from 'react-native';
 import WeatherInfo from './components/WeatherInfo';
 import ReloadIcon from'./components/ReloadIcon';
 import WeatherDetails from './components/WeatherDetails';
 import 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator,CardStyleInterpolators } from '@react-navigation/stack';
-import { Octicons } from '@expo/vector-icons';
-import MapView from 'react-native-maps';
+import { Octicons,FontAwesome5  } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import NodePicker from './components/NodePicker';
+import SearchWeatherDetails from './components/SearchWeatherDetails';
+import SearchBar from './components/SearchBar';
 
 const Stack = createStackNavigator();
 const WEATHER_API_KEY = '3d762beabfc99d3f5d8cafddac6724dd'
 const BASE_WEATHER_URL = 'https://api.openweathermap.org/data/2.5/weather?'
-
+const TOMTOM_API_KEY = 'BcL5zef3PjGFKFSXBHOMWWAk566zqItb'
 
 function Home({navigation}) {
  
   const [errorMessage, setErrorMessage] = useState(null)
-  const [nodeValue, setNodeValue] = useState('1392796');
+  const [nodeValue, setNodeValue] = useState('1384648');
   const [currentWeather, setCurrentWeather] = useState(null)
   const [currentJson, setCurrentJson]  = useState(null)
-  
+  const [city, setCity] = useState()
+  const [cityState, setCityState ] = useState()
   
  const [unitSystem, setunitSystem] = useState('metric')
   useEffect(() =>{
@@ -34,42 +35,26 @@ function Home({navigation}) {
     setCurrentWeather(null)
     setErrorMessage(null)
   
-    
-
     try{
-      let { status } = await Location.requestPermissionsAsync()
 
-      if (status !== 'granted') {
-        setErrorMessage('Access to location is needed to run the app')
-        return
-    }
-    window.nodeval = nodeValue
     const res = await fetch(`https://api.thingspeak.com/channels/${nodeValue}/feeds.json`)
-    const res1 = await fetch(`https://api.thingspeak.com/channels/1384648/feeds.json`)
-    const res2 = await fetch(`https://api.thingspeak.com/channels/1392064/feeds.json`)
     const myJson = await res.json()
-    const myJson1 = await res1.json()
-    const myJson2 = await res2.json()
+
       if (myJson) {
         setCurrentJson(myJson)
       }
-
-      // const location = await Location.getCurrentPositionAsync()
+      window.nodeval = nodeValue
+      const latitude1 = myJson.channel.latitude
+      const longitude1 = myJson.channel.longitude
       
-      const latitude1 = myJson1.channel.latitude
-      const longitude1 = myJson1.channel.longitude
-      window.lat1 = parseFloat(latitude1)
-      window.lng1 = parseFloat(longitude1)
-      const latitude2 = myJson2.channel.latitude
-      const longitude2 = myJson2.channel.longitude
-      window.lat2 = parseFloat(latitude2)
-      window.lng2 = parseFloat(longitude2)
-      window.channelDataLastEntryID = myJson.channel.last_entry_id
-      
-     
+      const loc = await fetch(`https://api.tomtom.com/search/2/reverseGeocode/${latitude1},${longitude1}.json?key=${TOMTOM_API_KEY}`)
+      const coordResponse = await loc.json()
+      if (coordResponse) {
+        setCity(coordResponse.addresses[0].address.municipalitySubdivision)
+        setCityState(coordResponse.addresses[0].address.countrySubdivision)
+      }
       
       const weatherUrl = `${BASE_WEATHER_URL}lat=${latitude1}&lon=${longitude1}&units=${unitSystem}&appid=${WEATHER_API_KEY}`
-
 
       const response = await fetch(weatherUrl)
       
@@ -89,21 +74,38 @@ function Home({navigation}) {
     }
   }
 
-  
 if(currentWeather){
-  return (<ScrollView contentContainerStyle={{backgroundColor:'#d9d9d9',flex:1}} refreshControl={<RefreshControl onRefresh={load} />} >
+  return (
+  <ScrollView style={{backgroundColor:'#d9d9d9',width:Dimensions.get('window').width}} refreshControl={<RefreshControl onRefresh={load} />} >
     <StatusBar style="light" />
-    <NodePicker nodeValue={nodeValue} setNodeValue={setNodeValue}/>
-    <WeatherInfo currentWeather={currentWeather} currentJson={currentJson} />
-    <WeatherDetails currentWeather={currentWeather} currentJson={currentJson}/>
-    <TouchableOpacity style={{alignItems: "center",
+    <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+    <TouchableOpacity style={{
            backgroundColor: '#d9d9d9',
-           padding: 5,marginTop:'7%'}}
-           onPress={() => {navigation.navigate('Details')}} >
-           <Text style={{fontWeight:'bold',fontSize:17,color:'black'}}>Go to Details {'>>'}</Text>
+           padding: 5,
+          marginLeft:'6%',
+        marginTop:'5%'}}
+           onPress={() => {navigation.navigate('Search')}} >
+           <FontAwesome5 name="search" size={30} color="#DC654B" />
            </TouchableOpacity>
-
-  </ScrollView>);
+    <NodePicker nodeValue={nodeValue} setNodeValue={setNodeValue}/>
+    </View>
+    <WeatherInfo currentWeather={currentWeather} currentJson={currentJson} city={city} cityState={cityState}/>
+    <WeatherDetails currentWeather={currentWeather} currentJson={currentJson}/>
+    <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:'7%',marginLeft:'10%',marginRight:'10%'}}>
+    <TouchableOpacity style={{
+           backgroundColor: '#d9d9d9',
+           padding: 5,}}
+           onPress={() => {navigation.navigate('Details')}} >
+           <Text style={{fontWeight:'bold',fontSize:17,color:'#222222'}}>Weather Plot</Text>
+           </TouchableOpacity>
+    <TouchableOpacity style={{
+           backgroundColor: '#d9d9d9',
+           padding: 5,}}
+           onPress={() => {Linking.openURL('https://mwsdata.netlify.app/')}} >
+           <Text style={{fontWeight:'bold',fontSize:17,color:'#222222'}}>Download Data</Text>
+           </TouchableOpacity>
+    </View>
+   </ScrollView>);
 }
 else if (errorMessage){
   return (
@@ -126,77 +128,57 @@ else {
 
 }
 
-
-
 function DetailsScreen(){
-  const iframe1 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src='https://thingspeak.com/channels/${nodeval}/charts/1?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Temperature&type=line'></iframe>`;
-  const iframe2 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/2?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Humidity&type=line"></iframe>`;
-  const iframe3 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/3?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Pressure&type=line"></iframe>`;
-  const iframe4 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/4?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Soil+Moisture&type=line"></iframe>`;
-  const iframe5 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/5?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=UV+Index&type=line"></iframe>`;
-  const iframe6 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/6?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=15&title=Air+Quality+Index&type=line"></iframe>`; 
+  const [value, onChangeText] = useState('15')
+  const iframe1 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src='https://thingspeak.com/channels/${nodeval}/charts/1?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Temperature&type=line'></iframe>`;
+  const iframe2 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/2?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Humidity&type=line"></iframe>`;
+  const iframe3 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/3?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Pressure&type=line"></iframe>`;
+  const iframe4 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/4?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Soil+Moisture&type=line"></iframe>`;
+  const iframe5 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/5?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=UV+Index&type=line"></iframe>`;
+  const iframe6 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/6?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Air+Quality+Index&type=line"></iframe>`;
+  const iframe7 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/7?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Heat+Index&type=line"></iframe>`;
+  const iframe8 = `<iframe width="370" height="230" style="border: 3px solid #222222;" src="https://thingspeak.com/channels/${nodeval}/charts/8?height=230&width=370&bgcolor=%23eeeeee&color=%23333333&dynamic=true&results=${value}&title=Dew+Point&type=line"></iframe>`; 
   
   return (
-    <ScrollView style={{backgroundColor:'#d9d9d9'}}>
-        <View>
-          <TouchableOpacity style={{alignItems: "center",
-          backgroundColor: '#222222',
-          marginRight:'25%',
-          marginLeft:'25%',
-          marginTop:'5%',
-          padding: 8}}
-          onPress={() => {Linking.openURL('https://mwsdata.netlify.app/')}} >
-          <Text style={{fontWeight:'bold',fontSize:20,color:'#dddddd'}}>Download Data</Text>
-          </TouchableOpacity>
-          <Text style={styles.maptitle}>MWS Node Location</Text>
-          <MapView style={styles.map}
-          initialRegion={{
-            latitude: lat1,
-            longitude: lng1,
-            latitudeDelta: 0.2,
-            longitudeDelta: 0.2,
-          }}
-          zoomEnabled={true}
-          scrollEnabled={true}
-          showsScale={true} >
-          <MapView.Marker 
-            coordinate={{
-              latitude: lat1,
-              longitude: lng1,
-            }}
-            title={"Node 1"}
-            description={`latitude: ${lat1}    longitude: ${lng1}`}/>
-            <MapView.Marker 
-            coordinate={{
-              latitude: lat2,
-              longitude: lng2,
-            }}
-            title={"Node 2"}
-            description={`latitude: ${lat2}    longitude: ${lng2}`}/>
-          </MapView>
-        </View>
-        <Text style={styles.graphtitle}>Weather Plot</Text>
+    <SafeAreaView>
+    <ScrollView contentContainerStyle={{backgroundColor:'#d9d9d9',width:Dimensions.get('window').width}}>
+      <View style={{flexDirection:'row',alignItems:'center',marginBottom:'5%',marginTop:'3%'}}>
+        <Text style={{fontSize:18,fontWeight:'bold',color:'#222222',marginLeft:'2%'}}>Number of results to be viewed:  </Text>
+        <TextInput
+      style={{ height: 30, borderColor: '#DC654B', borderWidth: 2,textAlign:'left',padding:5 }}
+      keyboardType={'numeric'}
+      maxLength={6}
+      onChangeText={text => onChangeText(text)}
+      value={value}
+    />
+    </View>   
         <WebView
           scalesPageToFit={false}
           bounces={false}
           javaScriptEnabled
-          style={{ height: 1470, width: Dimensions.get('window').width, backgroundColor:'#DC654B', }}
+          style={{ height: 1950, width: Dimensions.get('window').width, backgroundColor:'#DC654B' }}
           source={{
             html: `
                   <!DOCTYPE html>
-                  <html>
-                    <head></head> 
+                  <html> 
+                  <style>
+                   body {
+                    display:flex; 
+                    flex-direction:column; 
+                    text-align:center;
+                  }
+                  </style>
                     <body>
-                      <div id="baseDiv">${iframe1} ${iframe2} ${iframe3} ${iframe4} ${iframe5} ${iframe6}</div>
+                      <div>${iframe1} ${iframe2} ${iframe3} ${iframe4} ${iframe5} ${iframe6} ${iframe7} ${iframe8}</div>
                     </body>
                   </html>
             `,
           }}
-          automaticallyAdjustContentInsets={false}
+          automaticallyAdjustContentInsets={true}
         />
         
-        
     </ScrollView>
+    </SafeAreaView>
     
   );
 }
@@ -204,7 +186,7 @@ function DetailsScreen(){
 function InfoIcon (){
   return(
       <TouchableOpacity title="Infoscreen"
-        onPress={() => {Linking.openURL('https://mws-abhishas3.netlify.app/#')}} >
+        onPress={() => {Linking.openURL('https://mws-abhishas3.netlify.app')}} >
           <View style={styles.InfoIcon}>
               <Octicons name="info" size={25} color="#DC654B" />
           </View>    
@@ -212,26 +194,81 @@ function InfoIcon (){
   );
   
 }
-// const ActionBarImage = () => {
-//   return (
-//     <View style={{flexDirection: 'row'}}>
-//       <Image
-//         source={{
-//           uri:
-//             'https://i.ibb.co/VTvLGnT/wappicon1.jpg',
-//         }}
-//         style={{
-//           width: 40,
-//           height: 40,
-//           marginLeft: 15,
-//         }}
-//       />
-//     </View>
-//   );
-// };
+
+function SearchScreen() {
+  const [loaded, setLoaded] = useState(true)
+  const [lat, setLat] = useState(13.34373)
+  const [lon, setLon] = useState(74.74664)
+  const [countryState,setCountryState] = useState('')
+  const [stateCity,setStateCity] = useState('')
+  const [tom_res, setTomRes] = useState(null)
+
+  useEffect (() => {
+    fetchWeather('udupi');
+
+  }, [])
+  async function fetchWeather(city) {
+    setLoaded(false)
+    if (city == '')
+    {
+      setLoaded(true)
+      setTomRes(null)
+    }
+    else {
+    const tom_api = `https://api.tomtom.com/search/2/geocode/${city}.json?key=BcL5zef3PjGFKFSXBHOMWWAk566zqItb`
+    try {
+      const tom_loc = await fetch(tom_api)
+      const tom_res = await tom_loc.json()
+      if (tom_res.summary.numResults != 0) {
+        setTomRes(tom_res)
+        setLat(tom_res.results[0].position.lat)
+        setLon(tom_res.results[0].position.lon)
+        setCountryState(tom_res.results[0].address.countrySubdivision)
+        if (tom_res.results[0].address.municipality) {
+          setStateCity(tom_res.results[0].address.municipality)
+        }
+        else {
+          setStateCity(city)
+        }
+      }
+      else {
+        setTomRes(null)
+      }
+      setLoaded(true)
+      
+    } catch (error) {
+      console.log(error)
+    }
+  }
+}
+  
+  if (!loaded) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#DC654B"/>
+        <StatusBar style="light" />
+      </View>
+    )
+  }
+  else if (tom_res === null) {
+    return(
+      <View style={{backgroundColor:'#d9d9d9',flex:1}}>
+        <Text style={{fontSize:9,textAlign:'center'}}>For accurate search please enter city name space-seperated by its state name...</Text>
+        <SearchBar fetchWeather={fetchWeather}/>
+        <Text style={{marginTop:'10%',fontSize:15,textAlign:'center'}}>City not found! Try with a different city name...</Text>
+      </View>
+    )
+  }
+ return (
+   <View >
+     <SearchWeatherDetails lat={lat} lon={lon} countryState={countryState} stateCity={stateCity} fetchWeather={fetchWeather}/>
+   </View>
+ )
+  
+}
+
 export default function App (){
  
-
   return (
 
     <NavigationContainer>
@@ -246,21 +283,32 @@ export default function App (){
           headerTitleStyle: {
             fontWeight: 'bold',
           } , headerRight: () => <InfoIcon />,
-          // headerLeft: () => <ActionBarImage />,
           headerTitleAlign:'center'
         }}/>
         <Stack.Screen name="Details" component={DetailsScreen} options={{
-          title: 'Details',
+          title: 'Weather Plot',
           headerStyle: {
             backgroundColor: '#222222',
           }, 
           headerTintColor: '#d9d9d9',
           headerTitleStyle: {
             fontWeight: 'bold',
-          }, cardStyleInterpolator:CardStyleInterpolators.forHorizontalIOS,
+          }, cardStyleInterpolator:CardStyleInterpolators.forVerticalIOS,
+          headerTitleAlign:'center'
+        }}/>
+        <Stack.Screen name="Search" component={SearchScreen} options={{
+          title: 'Search',
+          headerStyle: {
+            backgroundColor: '#222222',
+          }, 
+          headerTintColor: '#d9d9d9',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          }, cardStyleInterpolator:CardStyleInterpolators.forScaleFromCenterAndroid,
           headerTitleAlign:'center'
         }}/>
       </Stack.Navigator>
+      
     </NavigationContainer>
   );
 
@@ -274,35 +322,15 @@ const styles = StyleSheet.create({
   },
   InfoIcon: {
     width: 44,
-    height: 20,
-    borderRadius: 20,
+    height: 22,
 },
-map: {
-  width: Dimensions.get('window').width,
-  height: Dimensions.get('window').height*(60/100),
-  alignSelf:'center',
-  
-},
-maptitle: {
-  padding:10,
-  backgroundColor:'#DC654B',
-  color:'#222222',
-  alignSelf: 'center',
-  marginTop:'10%',
-  width:'85%',
-  textAlign:'center',
-  fontSize:20,
-  fontWeight:'bold',
-},
-graphtitle: {
-  padding:10,
-  backgroundColor:'#222222',
-  color:'#dddddd',
-  alignSelf: 'center',
-  marginTop:'11%',
-  width:'85%',
-  textAlign:'center',
-  fontSize:20,
-  fontWeight:'bold',
+searchBox: {
+  borderWidth:2,
+  borderColor:'#777777',
+  padding:4,
+  marginLeft:'3%',
+  marginTop:'4%',
+  borderRadius:15,
+  marginRight:'3%'
 }
 });
